@@ -1,0 +1,52 @@
+(source_file
+  (func_decl "smart(accountA:accountB:amt:)" interface type='(Int, Int, Int) -> (accountA: Int, accountB: Int)' access=internal
+    (parameter_list
+      (parameter "accountA" apiName=accountA type='Int' interface type='Int')
+      (parameter "accountB" apiName=accountB type='Int' interface type='Int')
+      (parameter "amt" apiName=amt type='Int' interface type='Int'))
+    (result
+      (type_tuple names=accountA,accountB
+        (type_ident
+          (component id='Int' bind=Swift.(file).Int))
+        (type_ident
+          (component id='Int' bind=Swift.(file).Int))))
+    (brace_stmt
+      (guard_stmt
+        (call_expr implicit type='Int1' location=hello.swift:2:9 range=[hello.swift:2:9 - line:2:19] nothrow arg_labels=
+          (dot_syntax_call_expr implicit type='() -> Int1' location=hello.swift:2:9 range=[hello.swift:2:9 - line:2:19] nothrow
+            (declref_expr implicit type='(Bool) -> () -> Int1' location=hello.swift:2:14 range=[hello.swift:2:14 - line:2:14] decl=Swift.(file).Bool._getBuiltinLogicValue() function_ref=double)
+            (paren_expr type='(Bool)' location=hello.swift:2:14 range=[hello.swift:2:9 - line:2:19]
+              (binary_expr type='Bool' location=hello.swift:2:14 range=[hello.swift:2:10 - line:2:17] nothrow
+                (dot_syntax_call_expr implicit type='(Int, Int) -> Bool' location=hello.swift:2:14 range=[hello.swift:2:14 - line:2:14] nothrow
+                  (declref_expr implicit type='(Int.Type) -> (Int, Int) -> Bool' location=hello.swift:2:14 range=[hello.swift:2:14 - line:2:14] decl=Swift.(file).BinaryInteger.<= [with Int[Int: BinaryInteger module Swift]] function_ref=double)
+                  (type_expr implicit type='Int.Type' location=hello.swift:2:14 range=[hello.swift:2:14 - line:2:14] typerepr='Int'))
+                (tuple_expr implicit type='(Int, Int)' location=hello.swift:2:10 range=[hello.swift:2:10 - line:2:17]
+                  (declref_expr type='Int' location=hello.swift:2:10 range=[hello.swift:2:10 - line:2:10] decl=hello.(file).smart(accountA:accountB:amt:).amt@hello.swift:1:42 function_ref=unapplied)
+                  (call_expr implicit type='Int' location=hello.swift:2:17 range=[hello.swift:2:17 - line:2:17] nothrow arg_labels=_builtinIntegerLiteral:
+                    (constructor_ref_call_expr implicit type='(_MaxBuiltinIntegerType) -> Int' location=hello.swift:2:17 range=[hello.swift:2:17 - line:2:17] nothrow
+                      (declref_expr implicit type='(Int.Type) -> (_MaxBuiltinIntegerType) -> Int' location=hello.swift:2:17 range=[hello.swift:2:17 - line:2:17] decl=Swift.(file).Int.init(_builtinIntegerLiteral:) function_ref=single)
+                      (type_expr implicit type='Int.Type' location=hello.swift:2:17 range=[hello.swift:2:17 - line:2:17] typerepr='Int'))
+                    (tuple_expr implicit type='(_builtinIntegerLiteral: Int2048)' location=hello.swift:2:17 range=[hello.swift:2:17 - line:2:17] names=_builtinIntegerLiteral
+                      (integer_literal_expr type='Int2048' location=hello.swift:2:17 range=[hello.swift:2:17 - line:2:17] value=50)))))))
+          (tuple_expr implicit type='()'))
+        (brace_stmt
+          (return_stmt
+            (tuple_expr type='(accountA: Int, accountB: Int)' location=hello.swift:3:12 range=[hello.swift:3:12 - line:3:31]
+              (declref_expr type='Int' location=hello.swift:3:13 range=[hello.swift:3:13 - line:3:13] decl=hello.(file).smart(accountA:accountB:amt:).accountA@hello.swift:1:12 function_ref=unapplied)
+              (declref_expr type='Int' location=hello.swift:3:23 range=[hello.swift:3:23 - line:3:23] decl=hello.(file).smart(accountA:accountB:amt:).accountB@hello.swift:1:27 function_ref=unapplied)))))
+      (return_stmt
+        (tuple_expr type='(accountA: Int, accountB: Int)' location=hello.swift:9:10 range=[hello.swift:9:10 - line:9:41]
+          (binary_expr type='Int' location=hello.swift:9:20 range=[hello.swift:9:11 - line:9:22] nothrow
+            (dot_syntax_call_expr implicit type='(Int, Int) -> Int' location=hello.swift:9:20 range=[hello.swift:9:20 - line:9:20] nothrow
+              (declref_expr type='(Int.Type) -> (Int, Int) -> Int' location=hello.swift:9:20 range=[hello.swift:9:20 - line:9:20] decl=Swift.(file).Int.- function_ref=unapplied)
+              (type_expr implicit type='Int.Type' location=hello.swift:9:20 range=[hello.swift:9:20 - line:9:20] typerepr='Int'))
+            (tuple_expr implicit type='(Int, Int)' location=hello.swift:9:11 range=[hello.swift:9:11 - line:9:22]
+              (declref_expr type='Int' location=hello.swift:9:11 range=[hello.swift:9:11 - line:9:11] decl=hello.(file).smart(accountA:accountB:amt:).accountA@hello.swift:1:12 function_ref=unapplied)
+              (declref_expr type='Int' location=hello.swift:9:22 range=[hello.swift:9:22 - line:9:22] decl=hello.(file).smart(accountA:accountB:amt:).amt@hello.swift:1:42 function_ref=unapplied)))
+          (binary_expr type='Int' location=hello.swift:9:36 range=[hello.swift:9:27 - line:9:38] nothrow
+            (dot_syntax_call_expr implicit type='(Int, Int) -> Int' location=hello.swift:9:36 range=[hello.swift:9:36 - line:9:36] nothrow
+              (declref_expr type='(Int.Type) -> (Int, Int) -> Int' location=hello.swift:9:36 range=[hello.swift:9:36 - line:9:36] decl=Swift.(file).Int.+ function_ref=unapplied)
+              (type_expr implicit type='Int.Type' location=hello.swift:9:36 range=[hello.swift:9:36 - line:9:36] typerepr='Int'))
+            (tuple_expr implicit type='(Int, Int)' location=hello.swift:9:27 range=[hello.swift:9:27 - line:9:38]
+              (declref_expr type='Int' location=hello.swift:9:27 range=[hello.swift:9:27 - line:9:27] decl=hello.(file).smart(accountA:accountB:amt:).accountB@hello.swift:1:27 function_ref=unapplied)
+              (declref_expr type='Int' location=hello.swift:9:38 range=[hello.swift:9:38 - line:9:38] decl=hello.(file).smart(accountA:accountB:amt:).amt@hello.swift:1:42 function_ref=unapplied))))))))
