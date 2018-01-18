@@ -28,26 +28,35 @@ indirect enum List<T> {
     case Cons(T, List<T>)
 }
 
+typealias MetaValue = [Token]
 struct Sexp {
     let head: Label
-    let metadata: [Label: String]
+    let metadata: [Label: MetaValue]
     let args: [Sexp]
     
-    static let make: (Label) -> ([Label: String]) -> ([Sexp]) -> Sexp =
+    static let make: (Label) -> ([Label: MetaValue]) -> ([Sexp]) -> Sexp =
         { head in
             { metadata in
                 { args in
                     Sexp(head: head, metadata: metadata, args: args) }}}
     
-    static let parseSym: Parser<[Token], String> =
+    static let parseRawSym: Parser<[Token], String> =
         Parsers.takeIf{
             if case let .sym(x) = $0 {
                 return x
             } else { return nil }
         }
     
+    static let parseSym: Parser<[Token], [Token]> =
+        Parsers.takeTilEmpty { (tok: Token, peek: Token?) -> [Token] in
+            if tok == .space ||
+                tok == .closeParen {
+                return []
+            } else { return [tok] }
+        }
+    
     static let parseHead: Parser<[Token], Label> =
-        parseSym.map{ Label($0) }
+        parseRawSym.map{ Label($0) }
     
     static let parseEquals: Parser<[Token], ()> =
         Parsers.takeIf{
@@ -58,17 +67,17 @@ struct Sexp {
             }
         }
     
-    static let parseMetaValue: Parser<[Token], String> =
+    static let parseMetaValue: Parser<[Token], MetaValue> =
         parseSym
     
-    static let parseMetakv: Parser<[Token], (Label, String)> = {
-        let makeTuple: (Label) -> (String) -> (Label, String) =
+    static let parseMetakv: Parser<[Token], (Label, MetaValue)> = {
+        let makeTuple: (Label) -> (MetaValue) -> (Label, MetaValue) =
             { l in { s in (l, s) } }
         return Parser(result: makeTuple) <*> (parseHead <* parseEquals) <*> parseMetaValue
     }()
     
-    static let parseMetadata: Parser<[Token], [Label: String]> = {
-        let tuples: Parser<[Token], [(Label, String)]> =
+    static let parseMetadata: Parser<[Token], [Label: MetaValue]> = {
+        let tuples: Parser<[Token], [(Label, MetaValue)]> =
             Parsers.rep(p: parseMetakv, separatedBy: Parsers.one(Token.space).ignore)
         return tuples.map{ Dictionary(uniqueKeysWithValues: $0) }
     }()

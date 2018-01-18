@@ -34,8 +34,9 @@ func main() {
     func makeTuple(x: Label) -> ([Label: String]) -> (Label, [Label: String]) {
         return { s in (x, s) }
     }
-    lexAndParse(s: "(head x=a y=c)", parser: Sexp.parse)
-    lexAndParse(s: "(head x=a y=c (head2 x=a))", parser: Sexp.parseArgs)
+    lexAndParse(s: "(head x=a y=c (head2 x=a))", parser: Sexp.parse)
+    lexAndParse(s: "(x y=head.swift:9:0 q=z (foo re=x))", parser: Sexp.parse)
+    lexAndParse(s: "(declref_expr type='Int' location=hello.swift:9:38 range=[hello.swift:9:38-line:9:38] decl=hello.(file).smart(accountA:accountB:amt:).amt@hello.swift:1:42 function_ref=unapplied)", parser: Sexp.parse)
 }
 
 main()

@@ -8,7 +8,27 @@
 
 // Chris confirmed that this is released under MIT
 // Look at license.png in the PrettyErrors directory for screenshot of the email
-
+infix operator <>: AdditionPrecedence
+protocol Monoid {
+    static var empty: Self { get }
+    static func <>(lhs: Self, rhs: Self) -> Self
+}
+extension Array: Monoid {
+    static var empty: Array {
+        return []
+    }
+    static func <>(lhs: Array, rhs: Array) -> Array {
+        return lhs + rhs
+    }
+}
+protocol EmptyAwareness {
+    var isEmpty: Bool { get }
+}
+extension Array: EmptyAwareness {
+    var isEmpty: Bool {
+        return self.count == 0
+    }
+}
 import Foundation
 
 var HACK_recursion_lookup_table: [String: Any] = [:]
@@ -117,7 +137,22 @@ func <|><Input, A>(l: Parser<Input, A>, r: Parser<Input, A>) -> Parser<Input, A>
 }
 
 enum Parsers {
-    static func takeIf<A, B>(_ f: @escaping (A) -> B?) -> Parser<[A], B> {
+    // tok, peek -> monoid
+    static func takeTilEmpty<A, M: Monoid & EmptyAwareness>(_ f: @escaping (A, A?) -> M) -> Parser<[A], M> {
+        return Parser { (input: inout [A]) -> M? in
+            if let head = input.first,
+                let b = f(head, input.dropFirst().first) as M?,
+                !b.isEmpty {
+                let _ = input.removeFirst()
+                // not tail-recursive, but :shrug: should be good enough
+                return b <> (takeTilEmpty(f).parse(&input) ?? M.empty)
+            } else {
+                return nil
+            }
+        }
+    }
+    
+    static func takeIf<A, B>(_ f: @escaping (A) -> B?) -> Parser<[A], B> {        
         return Parser { (input: inout [A]) -> B? in
             if let head = input.first,
                 let b = f(head) {

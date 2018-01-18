@@ -26,11 +26,6 @@ enum Token {
     case char(Character)
     
     static let rules: [(String, (String) -> Token?)] = [
-        ("[ \t\n]", { _ in .space }),
-        ("\".*?\"", { .literal(String($0.dropFirst().dropLast())) }),
-        ("\'.*?\'", { .literal(String($0.dropFirst().dropLast())) }),
-        ("[0-9.]+", { Double($0).map{ .number($0) } }),
-        ("[a-zA-Z][_a-zA-Z0-9]*", { .sym($0) }),
         ("\\(", { _ in .openParen }),
         ("\\)", { _ in .closeParen }),
         ("\\[", { _ in .openBracket }),
@@ -40,7 +35,12 @@ enum Token {
         ("\\.", { _ in .dot }),
         ("\\:", { _ in .colon }),
         ("<", { _ in .lessThan }),
-        (">", { _ in .greaterThan })
+        (">", { _ in .greaterThan }),
+        ("[ \t\n]", { _ in .space }),
+        ("\".*?\"", { .literal(String($0.dropFirst().dropLast())) }),
+        ("\'.*?\'", { .literal(String($0.dropFirst().dropLast())) }),
+        ("[0-9.]+", { Double($0).map{ .number($0) } }),
+        ("[a-zA-Z][_a-zA-Z0-9]*", { .sym($0) })
     ]
     
     // from: http://blog.matthewcheok.com/writing-a-lexer-in-swift/
