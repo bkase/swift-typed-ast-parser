@@ -35,7 +35,7 @@ func main() {
         return { s in (x, s) }
     }
     lexAndParse(s: "(head x=a y=c)", parser: Sexp.parse)
-    lexAndParse(s: "(a foo)(b bar)", parser: Sexp.parseArgs)
+    lexAndParse(s: "(head x=a y=c (head2 x=a))", parser: Sexp.parseArgs)
 }
 
 main()

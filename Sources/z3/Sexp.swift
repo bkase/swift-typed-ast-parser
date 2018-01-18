@@ -74,16 +74,14 @@ struct Sexp {
     }()
     
     static let parseArgs: Parser<[Token], [Sexp]> =
-        Parser(result:[])
-        // Infinite recursion
-        //Sexp.parse.many
+        Parser<[Token], Sexp>.loaded(name: "sexp").many
     
     static let parse: Parser<[Token], Sexp> =
-        Parser(result: make) <*>
+        (Parser(result: make) <*>
             (Parsers.one(.openParen) *> parseHead) <*>
             (Parsers.one(.space) *> parseMetadata) <*>
             (parseArgs
-                <* Parsers.one(Token.closeParen))
+                <* Parsers.one(Token.closeParen))).stored(name: "sexp")
 }
 
 struct KvPair {

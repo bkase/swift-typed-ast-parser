@@ -11,6 +11,8 @@
 
 import Foundation
 
+var HACK_recursion_lookup_table: [String: Any] = [:]
+
 struct Parser<Input, A> {
     let parse: (inout Input) -> A?
 }
@@ -42,6 +44,16 @@ extension Parser {
     
     var ignore: Parser<Input, ()> {
         return self.map{ _ in () }
+    }
+    
+    func stored(name: String) -> Parser {
+        HACK_recursion_lookup_table[name] = self
+        return self
+    }
+    static func loaded(name: String) -> Parser {
+        return Parser { (input: inout Input) in
+            (HACK_recursion_lookup_table[name]! as! Parser).parse(&input)
+        }
     }
 }
 
