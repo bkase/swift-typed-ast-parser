@@ -9,6 +9,8 @@ import Foundation
 
 struct Label {
     let v: String
+}
+extension Label {
     init(_ v: String) { self.v = v }
 }
 
@@ -47,33 +49,56 @@ struct Sexp {
             } else { return nil }
         }
     
-    static let parseSym: Parser<[Token], [Token]> =
-        Parsers.takeTilEmpty { (tok: Token, peek: Token?) -> [Token] in
-            if tok == .space ||
-                tok == .closeParen {
-                return []
-            } else { return [tok] }
-        }
-    
     static let parseHead: Parser<[Token], Label> =
         parseRawSym.map{ Label($0) }
     
     static let parseEquals: Parser<[Token], ()> =
         Parsers.takeIf{
-            if case .equals = $0 {
-                return ()
-            } else {
-                return nil
-            }
+            .equals == $0 ? () : nil
         }
     
     static let parseMetaValue: Parser<[Token], MetaValue> =
-        parseSym
+        Parsers.takeTilEmpty(lookaheadMax: 3) { (tok: Token, lookahead: [Token]) -> [Token] in
+            if lookahead.count >= 2,
+                let sym = lookahead[0] as Token?,
+                let eq = lookahead[1] as Token?,
+                case .sym(_) = sym,
+                tok == .space,
+                eq == .equals {
+                print("The hard case", tok, sym, eq)
+                return []
+            } else if lookahead.count >= 3,
+                let sym = lookahead[0] as Token?,
+                let space = lookahead[1] as Token?,
+                let openParen = lookahead[2] as Token?,
+                tok == .space,
+                case .sym(_) = sym,
+                space == .space,
+                openParen == .openParen {
+                print("The ending in an implicit case")
+                return []
+            } else if lookahead.count >= 1,
+                let openParen = lookahead[0] as Token?,
+                openParen == .openParen,
+                tok == .space {
+                print("The next bunch of args case")
+                return []
+            } else if lookahead.count < 2 && (tok == .space || tok == .closeParen) {
+                print("The space case", tok, lookahead)
+                return []
+            } else { return [tok] }
+    }
+
     
     static let parseMetakv: Parser<[Token], (Label, MetaValue)> = {
         let makeTuple: (Label) -> (MetaValue) -> (Label, MetaValue) =
             { l in { s in (l, s) } }
-        return Parser(result: makeTuple) <*> (parseHead <* parseEquals) <*> parseMetaValue
+        let duplicate: (Label) -> (Label, MetaValue) =
+            { l in (l, [.sym(l.v)]) }
+        
+        return (Parser(result: makeTuple) <*> (parseHead <* parseEquals) <*> parseMetaValue) <|>
+            (parseHead.map{ l in (l, [.sym(l.v)]) })
+        
     }()
     
     static let parseMetadata: Parser<[Token], [Label: MetaValue]> = {
@@ -91,6 +116,19 @@ struct Sexp {
             (Parsers.one(.space) *> parseMetadata) <*>
             (parseArgs
                 <* Parsers.one(Token.closeParen))).stored(name: "sexp")
+}
+
+extension Sexp: Equatable {
+    static func ==(lhs: Sexp, rhs: Sexp) -> Bool {
+        let b1: Bool = lhs.head == rhs.head
+        let leftMeta: [Label: String] = lhs.metadata.mapValues{ $0.map{ String(describing: $0) }.joined() }
+        let rightMeta: [Label: String] =
+            rhs.metadata.mapValues{ $0.map{ String(describing: $0) }.joined() }
+        
+        return b1 && (leftMeta == rightMeta) && zip(lhs.args, rhs.args).map{ lr in
+                lr.0 == lr.1
+            }.reduce(true, { $0 && $1 })
+    }
 }
 
 struct KvPair {

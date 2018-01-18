@@ -131,21 +131,46 @@ func <^><Input, A,B>(f: @escaping (A) -> B, p2: Parser<Input, A>) -> Parser<Inpu
 
 func <|><Input, A>(l: Parser<Input, A>, r: Parser<Input, A>) -> Parser<Input, A> {
     return Parser<Input, A>(parse: { (s: inout Input) -> A? in
+        var copy = s
         if let result = l.parse(&s) { return result }
-        return r.parse(&s)
+        return r.parse(&copy)
     })
 }
 
 enum Parsers {
     // tok, peek -> monoid
-    static func takeTilEmpty<A, M: Monoid & EmptyAwareness>(_ f: @escaping (A, A?) -> M) -> Parser<[A], M> {
+    static func takeTilEmpty<A, M: Monoid & EmptyAwareness>(lookaheadMax: Int, _ f: @escaping (A, [A]) -> M) -> Parser<[A], M> {
         return Parser { (input: inout [A]) -> M? in
+            let snapshot = input
+            let lookahead: [A] = ({
+                if lookaheadMax == 0 {
+                    return []
+                }
+                var lookaheadLeft = lookaheadMax
+                
+                if let second = snapshot.dropFirst().first {
+                    var seq = snapshot.dropFirst()
+                    lookaheadLeft = lookaheadLeft - 1
+                    return Array(sequence(first: second, next: { _ in
+                        if lookaheadLeft <= 0 {
+                            return nil
+                        } else {
+                            lookaheadLeft = lookaheadLeft - 1
+                            seq = seq.dropFirst()
+                            return seq.first
+                        }
+                    }))
+                } else {
+                    return []
+                }
+            })()
+            
             if let head = input.first,
-                let b = f(head, input.dropFirst().first) as M?,
+                let b = f(head, lookahead) as M?,
                 !b.isEmpty {
                 let _ = input.removeFirst()
                 // not tail-recursive, but :shrug: should be good enough
-                return b <> (takeTilEmpty(f).parse(&input) ?? M.empty)
+                return b <> (takeTilEmpty(lookaheadMax: lookaheadMax, f).parse(&input) ?? M.empty)
             } else {
                 return nil
             }
