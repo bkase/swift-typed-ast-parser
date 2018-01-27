@@ -54,9 +54,11 @@ extension Parser {
     
     func map<B>(_ f: @escaping (A) -> B) -> Parser<Input, B> {
         return Parser<Input, B> { (input: inout Input) in
+            let backup = input
             if let a = self.parse(&input) {
                 return f(a)
             } else {
+                input = backup
                 return nil
             }
         }
@@ -102,16 +104,18 @@ infix operator <|>: ChoicePrecedence
 
 func *><Input, A,B>(p1: Parser<Input, A>, p2: Parser<Input, B>) -> Parser<Input, B> {
     return Parser(parse: { (s: inout Input) in
+        let copy = s
         guard let _ = p1.parse(&s),
-            let result = p2.parse(&s) else { return nil }
+            let result = p2.parse(&s) else { s = copy; return nil }
         return result
     })
 }
 
 func <*<Input, A,B>(p1: Parser<Input, A>, p2: Parser<Input, B>) -> Parser<Input, A> {
     return Parser(parse: { (s: inout Input) -> A? in
+        let copy = s
         guard let result = p1.parse(&s),
-            let _ = p2.parse(&s) else { return nil }
+            let _ = p2.parse(&s) else { s = copy; return nil }
         return result
     })
     //return Parser<A>(lift: { x, _ in x }, p1, p2)
@@ -119,8 +123,12 @@ func <*<Input, A,B>(p1: Parser<Input, A>, p2: Parser<Input, B>) -> Parser<Input,
 
 func <*><Input, A,B>(pf: Parser<Input, (A) -> B>, p: Parser<Input, A>) -> Parser<Input, B> {
     return Parser(parse: { (s: inout Input) -> B? in
+        let copy = s
         guard let f = pf.parse(&s),
-            let b = p.parse(&s) else { return nil }
+            let b = p.parse(&s) else {
+                s = copy
+                return nil
+        }
         return f(b)
     })
 }
@@ -131,13 +139,16 @@ func <^><Input, A,B>(f: @escaping (A) -> B, p2: Parser<Input, A>) -> Parser<Inpu
 
 func <|><Input, A>(l: Parser<Input, A>, r: Parser<Input, A>) -> Parser<Input, A> {
     return Parser<Input, A>(parse: { (s: inout Input) -> A? in
-        var copy = s
         if let result = l.parse(&s) { return result }
-        return r.parse(&copy)
+        return r.parse(&s)
     })
 }
 
 enum Parsers {
+    static func tapBefore<A, B>(_ msg: String) -> Parser<[A], B> {
+        return takeIf{ print(msg, $0); return nil }
+    }
+    
     // tok, peek -> monoid
     static func takeTilEmpty<A, M: Monoid & EmptyAwareness>(lookaheadMax: Int, _ f: @escaping (A, [A]) -> M) -> Parser<[A], M> {
         return Parser { (input: inout [A]) -> M? in
@@ -180,7 +191,7 @@ enum Parsers {
     static func takeIf<A, B>(_ f: @escaping (A) -> B?) -> Parser<[A], B> {        
         return Parser { (input: inout [A]) -> B? in
             if let head = input.first,
-                let b = f(head) {
+                let b: B = f(head) {
                 let _ = input.removeFirst()
                 return b
             } else {

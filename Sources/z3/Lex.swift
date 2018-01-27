@@ -25,6 +25,14 @@ enum Token {
     case greaterThan
     case char(Character)
     
+    var isSymOrLiteral: Bool {
+        switch self {
+        case .sym(_): return true
+        case .literal(_): return true
+        default: return false
+        }
+    }
+    
     static let rules: [(String, (String) -> Token?)] = [
         ("\\(", { _ in .openParen }),
         ("\\)", { _ in .closeParen }),
@@ -53,8 +61,8 @@ enum Token {
             
             for (pattern, generator) in rules {
                 if let range = content.range(of: pattern, options: .regularExpression), range.lowerBound == content.startIndex {
-                    let m = String(content[range])
-                    if let t = generator(m) {
+                    if let m = String(content[range]),
+                       let t = generator(m) {
                         tokens.append(t)
                     }
                     

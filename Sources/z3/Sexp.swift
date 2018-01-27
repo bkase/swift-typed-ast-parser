@@ -49,6 +49,13 @@ struct Sexp {
             } else { return nil }
         }
     
+    static let parseRawLiteral: Parser<[Token], String> =
+        Parsers.takeIf{
+            if case let .literal(x) = $0 {
+                return x
+            } else { return nil }
+        }
+    
     static let parseHead: Parser<[Token], Label> =
         parseRawSym.map{ Label($0) }
     
@@ -59,6 +66,7 @@ struct Sexp {
     
     static let parseMetaValue: Parser<[Token], MetaValue> =
         Parsers.takeTilEmpty(lookaheadMax: 3) { (tok: Token, lookahead: [Token]) -> [Token] in
+            print("Taking til empty", tok)
             if lookahead.count >= 2,
                 let sym = lookahead[0] as Token?,
                 let eq = lookahead[1] as Token?,
@@ -78,6 +86,12 @@ struct Sexp {
                 print("The ending in an implicit case")
                 return []
             } else if lookahead.count >= 1,
+                let spaceOrCloseParen = lookahead[0] as Token?,
+                tok == .closeParen,
+                spaceOrCloseParen == .space || spaceOrCloseParen == .closeParen {
+                print("The ending of not-last recursive case")
+                return []
+            } else if lookahead.count >= 1,
                 let openParen = lookahead[0] as Token?,
                 openParen == .openParen,
                 tok == .space {
@@ -93,27 +107,26 @@ struct Sexp {
     static let parseMetakv: Parser<[Token], (Label, MetaValue)> = {
         let makeTuple: (Label) -> (MetaValue) -> (Label, MetaValue) =
             { l in { s in (l, s) } }
-        let duplicate: (Label) -> (Label, MetaValue) =
-            { l in (l, [.sym(l.v)]) }
         
-        return (Parser(result: makeTuple) <*> (parseHead <* parseEquals) <*> parseMetaValue) <|>
-            (parseHead.map{ l in (l, [.sym(l.v)]) })
-        
+        return (Parsers.takeIf{ print("starting", $0); return nil } <|> ((Parser(result: makeTuple) <*> (parseHead <* parseEquals) <*> parseMetaValue)) <|>
+            ((parseRawSym <|> parseRawLiteral).map{ v in print("gotcha", v); return (Label(v), [.sym(v)]) }))
+            <|> Parsers.takeIf{ print("abandoned", $0); return nil }
     }()
     
     static let parseMetadata: Parser<[Token], [Label: MetaValue]> = {
         let tuples: Parser<[Token], [(Label, MetaValue)]> =
-            Parsers.rep(p: parseMetakv, separatedBy: Parsers.one(Token.space).ignore)
-        return tuples.map{ Dictionary(uniqueKeysWithValues: $0) }
+            (Parsers.one(.space) *> Parsers.rep(p: parseMetakv, separatedBy: Parsers.one(Token.space).ignore).map{ x in print("I'm done \(x)"); return x})
+                <|> Parser(result: [])
+        return tuples.map{ Dictionary($0, uniquingKeysWith: { x, _ in x }) }
     }()
     
     static let parseArgs: Parser<[Token], [Sexp]> =
-        Parser<[Token], Sexp>.loaded(name: "sexp").many
+        (Parsers.one(.space) *> Parser<[Token], Sexp>.loaded(name: "sexp")).many.map{ print("Made", $0); return $0 }
     
     static let parse: Parser<[Token], Sexp> =
         (Parser(result: make) <*>
             (Parsers.one(.openParen) *> parseHead) <*>
-            (Parsers.one(.space) *> parseMetadata) <*>
+            parseMetadata <*>
             (parseArgs
                 <* Parsers.one(Token.closeParen))).stored(name: "sexp")
 }
