@@ -68,6 +68,15 @@ struct Sexp {
         Parsers.takeTilEmpty(lookaheadMax: 3) { (tok: Token, lookahead: [Token]) -> [Token] in
             print("Taking til empty", tok)
             if lookahead.count >= 2,
+                let space = lookahead[0] as Token?,
+                let functionRef = lookahead[1] as Token?,
+                tok == .closeParen,
+                space == .space,
+                functionRef == .sym("function_ref") {
+                print("Special case the stupid decls")
+                return [tok]
+            }
+            if lookahead.count >= 2,
                 let sym = lookahead[0] as Token?,
                 let eq = lookahead[1] as Token?,
                 case .sym(_) = sym,
@@ -109,6 +118,7 @@ struct Sexp {
             { l in { s in (l, s) } }
         
         return (Parsers.takeIf{ print("starting", $0); return nil } <|> ((Parser(result: makeTuple) <*> (parseHead <* parseEquals) <*> parseMetaValue)) <|>
+            ((parseRawSym <* Parsers.one(.equals)).map{ v in print("no val case", v); return (Label(v), []) }) <|>
             ((parseRawSym <|> parseRawLiteral).map{ v in print("gotcha", v); return (Label(v), [.sym(v)]) }))
             <|> Parsers.takeIf{ print("abandoned", $0); return nil }
     }()
@@ -121,12 +131,12 @@ struct Sexp {
     }()
     
     static let parseArgs: Parser<[Token], [Sexp]> =
-        (Parsers.one(.space) *> Parser<[Token], Sexp>.loaded(name: "sexp")).many.map{ print("Made", $0); return $0 }
+        (Parsers.one(.space) *> Parser<[Token], Sexp>.loaded(name: "sexp")).many.map{ print("Made recursive", $0); return $0 }
     
     static let parse: Parser<[Token], Sexp> =
         (Parser(result: make) <*>
             (Parsers.one(.openParen) *> parseHead) <*>
-            parseMetadata <*>
+            parseMetadata.map{ print("Got metadata", $0); return $0 } <*>
             (parseArgs
                 <* Parsers.one(Token.closeParen))).stored(name: "sexp")
 }
